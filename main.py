@@ -56,7 +56,6 @@ class KBTest(unittest.TestCase):
         answer = self.KB.kb_ask(ask1)
         self.assertEqual(str(answer[0]), "?X : bing")
 
-
 def pprint_justification(answer):
     """Pretty prints (hence pprint) justifications for the answer.
     """

@@ -1,3 +1,5 @@
+import itertools
+
 import read, copy
 from util import *
 from logical_classes import *
@@ -55,6 +57,7 @@ class KnowledgeBase(object):
             None
         """
         printv("Adding {!r}", 1, verbose, [fact_rule])
+        print("\nAdding",fact_rule,"to KB")
         if isinstance(fact_rule, Fact):
             if fact_rule not in self.facts:
                 self.facts.append(fact_rule)
@@ -120,14 +123,29 @@ class KnowledgeBase(object):
         """Retract a fact from the KB
 
         Args:
-            fact (Fact) - Fact to be retracted
+            fact_rule (Fact or Rule) - Fact or Rule to be retracted
 
         Returns:
             None
         """
         printv("Retracting {!r}", 0, verbose, [fact])
-        ####################################################
-        # Student code goes here
+        if isinstance(fact, Rule): return
+
+        kb_fact = self.facts[self.facts.index(fact)]
+        if kb_fact.supported_by: kb_fact.asserted = False
+        else: self._kb_retract_recursive(kb_fact)
+
+    def _kb_retract_recursive(self, fact_rule):
+        for supported in itertools.chain(fact_rule.supports_facts, fact_rule.supports_rules):
+            self._clean_up_supported_by(supported, fact_rule)
+            if not supported.asserted and not supported.supported_by:
+                self._kb_retract_recursive(supported)
+        self.facts.remove(fact_rule) if isinstance(fact_rule, Fact) else self.rules.remove(fact_rule)
+
+    def _clean_up_supported_by(self, fact_rule, item):
+        for i,pair in enumerate(fact_rule.supported_by):
+            if item in pair: fact_rule.supported_by.pop(i)
+
 
 
 class InferenceEngine(object):
@@ -142,7 +160,23 @@ class InferenceEngine(object):
         Returns:
             Nothing
         """
+        # print("TEST!!!")
+        # assert(False)
         printv('Attempting to infer from {!r} and {!r} => {!r}', 1, verbose,
             [fact.statement, rule.lhs, rule.rhs])
-        ####################################################
-        # Student code goes here
+
+        if bindings := self._get_rule_bindings(fact, rule):
+            new_lhs = [ns for stmt in rule.lhs
+                       if (ns := instantiate(stmt,bindings)) != fact.statement]
+            new_rhs = instantiate(rule.rhs, bindings)
+            new_fact_rule = Fact(new_rhs, [(fact,rule)]) if not new_lhs \
+                else Rule([new_lhs,new_rhs], [(fact,rule)])
+
+            fact.supports_rules.append(new_fact_rule)
+            rule.supports_rules.append(new_fact_rule)
+            kb.kb_add(new_fact_rule)
+
+    def _get_rule_bindings(self, fact, rule):
+        bindings = None
+        for stmt in rule.lhs: bindings = match(stmt, fact.statement, bindings)
+        return bindings
