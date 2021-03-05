@@ -22,28 +22,16 @@ class KnowledgeBase(object):
         return string
 
     def _get_fact(self, fact):
-        """INTERNAL USE ONLY
-        Get the fact in the KB that is the same as the fact argument
-
-        Args:
-            fact (Fact): Fact we're searching for
-
-        Returns:
-            Fact: matching fact
+        """ Args: fact (Fact): Fact we're searching for
+            Returns: Fact: matching fact
         """
         for kbfact in self.facts:
             if fact == kbfact:
                 return kbfact
 
     def _get_rule(self, rule):
-        """INTERNAL USE ONLY
-        Get the rule in the KB that is the same as the rule argument
-
-        Args:
-            rule (Rule): Rule we're searching for
-
-        Returns:
-            Rule: matching rule
+        """ Args: rule (Rule): Rule we're searching for
+            Returns: Rule: matching rule
         """
         for kbrule in self.rules:
             if rule == kbrule:
@@ -100,7 +88,7 @@ class KnowledgeBase(object):
         printv("Asserting {!r}", 0, verbose, [fact])
         self.kb_add(fact)
         isViolation = read.parse_input("fact: (violation "+cell+")")
-        self.KB.kb_ask(isViolation)
+        self.kb_ask(isViolation)
         self.kb_retract(fact)
         return isViolation
 
@@ -125,7 +113,7 @@ class KnowledgeBase(object):
             return bindings_lst if bindings_lst.list_of_bindings else []
 
         else:
-            print("Invalid ask:", fact.statement)
+            print("Invalid ask:", f.statement)
             return []
 
     def kb_retract(self, fact):
