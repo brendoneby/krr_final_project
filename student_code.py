@@ -104,7 +104,7 @@ class KnowledgeBase(object):
         self.kb_retract(fact)
         return isViolation
 
-    def kb_ask(self, fact):
+    def kb_ask(self, f):
         """Ask if a fact is in the KB
 
         Args:
@@ -113,9 +113,8 @@ class KnowledgeBase(object):
         Returns:
             listof Bindings|False - list of Bindings if result found, False otherwise
         """
-        print("Asking {!r}".format(fact))
-        if factq(fact):
-            f = Fact(fact.statement)
+        print("Asking {!r}".format(f))
+        if factq(f):
             bindings_lst = ListOfBindings()
             # ask matched facts
             for fact in self.facts:
@@ -133,7 +132,7 @@ class KnowledgeBase(object):
         """Retract a fact from the KB
 
         Args:
-            fact_rule (Fact or Rule) - Fact or Rule to be retracted
+            fact - Fact to be retracted
 
         Returns:
             None
