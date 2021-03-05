@@ -7,10 +7,11 @@ from logical_classes import *
 verbose = 0
 
 class KnowledgeBase(object):
-    def __init__(self, facts=[], rules=[]):
+    def __init__(self, facts=[], rules=[], file = 'minesweeper_kb.txt'):
         self.facts = facts
         self.rules = rules
         self.ie = InferenceEngine()
+        self.setUp(file)
 
     def __repr__(self):
         return 'KnowledgeBase({!r}, {!r})'.format(self.facts, self.rules)
@@ -20,6 +21,14 @@ class KnowledgeBase(object):
         string += "\n".join((str(fact) for fact in self.facts)) + "\n"
         string += "\n".join((str(rule) for rule in self.rules))
         return string
+
+    def setUp(self, file):
+        # Assert starter facts
+        self.data = read.read_tokenize(file)
+        data = read.read_tokenize(file)
+        for item in data:
+            if isinstance(item, Fact) or isinstance(item, Rule):
+                self.kb_add(item)
 
     def _get_fact(self, fact):
         """ Args: fact (Fact): Fact we're searching for
