@@ -6,14 +6,7 @@ from knowledgebase import KnowledgeBase
 class KBTest(unittest.TestCase):
 
     def setUp(self):
-        # Assert starter facts
-        file = 'statements_kb4.txt'
-        self.data = read.read_tokenize(file)
-        data = read.read_tokenize(file)
-        self.KB = KnowledgeBase([], [])
-        for item in data:
-            if isinstance(item, Fact) or isinstance(item, Rule):
-                self.KB.kb_add(item)
+        self.KB = KnowledgeBase([], [], 'statements_kb4.txt')
 
     def test1(self):
         ask1 = read.parse_input("fact: (motherof ada ?X)")
