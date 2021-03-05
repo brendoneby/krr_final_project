@@ -94,6 +94,13 @@ class KnowledgeBase(object):
         printv("Asserting {!r}", 0, verbose, [fact_rule])
         self.kb_add(fact_rule)
 
+    def kb_is_permitted(self, fact_rule):
+        """Returns if adding a fact to the knowledgebase causes a logical inconsistancy"""
+        printv("Asserting {!r}", 0, verbose, [fact_rule])
+        violation = self.kb_add(fact_rule)
+        self.kb_retract(fact_rule)
+        return not violation
+
     def kb_ask(self, fact):
         """Ask if a fact is in the KB
 

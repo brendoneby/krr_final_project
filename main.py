@@ -56,6 +56,78 @@ class KBTest(unittest.TestCase):
         answer = self.KB.kb_ask(ask1)
         self.assertEqual(str(answer[0]), "?X : bing")
 
+    def test6(self):
+        fact1 = read.parse_input("fact: (motherof ada greta)")
+        self.KB.kb_add(fact1)
+        fact2 = read.parse_input("fact: (motherof greta hansel)")
+        self.KB.kb_add(fact2)
+        ask1 = read.parse_input("fact: (grandmotherof ada ?X)")
+        print(' Asking if', ask1)
+        answer = self.KB.kb_ask(ask1)
+        self.assertEqual(str(answer[2]), "?X : hansel")
+
+    def test7(self):
+        fact1 = read.parse_input("fact: (motherof greta hansel)")
+        self.KB.kb_add(fact1)
+        ask1 = read.parse_input("fact: (grandmotherof ada hansel)")
+        print(' Asking if', ask1)
+        answer = self.KB.kb_ask(ask1)
+        self.assertTrue(str(answer))
+
+    def test8(self):
+        fact1 = read.parse_input("fact: (grandmotherof stephanie chen)")
+        self.KB.kb_add(fact1)
+        fact2 = read.parse_input("fact: (auntof may chen)")
+        self.KB.kb_add(fact2)
+        fact3 = read.parse_input("fact: (motherof bing chen)")
+        print(' Retracting', fact3)
+        self.KB.kb_retract(fact3)
+        ask1 = read.parse_input("fact: (grandmotherof ?X chen)")
+        print(' Asking if', ask1)
+        answer = self.KB.kb_ask(ask1)
+        self.assertEqual(str(answer[0]), "?X : stephanie")
+        ask2 = read.parse_input("fact: (auntof ?X chen)")
+        print(' Asking if', ask2)
+        answer2 = self.KB.kb_ask(ask2)
+        self.assertEqual(str(answer2[0]), "?X : may")
+
+    def test9(self):
+        fact1 = read.parse_input("fact: (motherof stephanie bing)")
+        self.KB.kb_add(fact1)
+        fact2 = read.parse_input("fact: (sisterof may bing)")
+        self.KB.kb_add(fact2)
+        fact3 = read.parse_input("fact: (motherof bing chen)")
+        print(' Retracting', fact3)
+        self.KB.kb_retract(fact3)
+        ask1 = read.parse_input("fact: (grandmotherof ?X chen)")
+        print(' Asking if', ask1)
+        answer = self.KB.kb_ask(ask1)
+        print(" answer",answer)
+        self.assertTrue(len(answer) == 0)
+        ask2 = read.parse_input("fact: (auntof ?X chen)")
+        print(' Asking if', ask2)
+        answer2 = self.KB.kb_ask(ask2)
+        self.assertTrue(len(answer2) == 0)
+
+    def test10(self):
+        r1 = read.parse_input("fact: (motherof ada bing)")
+        print(' Retracting', r1)
+        self.KB.kb_retract(r1)
+        ask1 = read.parse_input("fact: (grandmotherof ada ?X)")
+        print(' Asking if', ask1)
+        answer = self.KB.kb_ask(ask1)
+        self.assertEqual(str(answer[0]), "?X : felix")
+        self.assertEqual(1, (len(answer)))
+
+    def test11(self):
+        r1 = read.parse_input("fact: (motherof ada bing)")
+        print(' Retracting', r1)
+        self.KB.kb_retract(r1)
+        ask1 = read.parse_input("fact: (parent ada ?X)")
+        print(' Asking if', ask1)
+        answer = self.KB.kb_ask(ask1)
+        self.assertEqual(0, len(answer))
+
 def pprint_justification(answer):
     """Pretty prints (hence pprint) justifications for the answer.
     """

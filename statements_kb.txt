@@ -16,6 +16,8 @@ fact: (inst pyramid1 pyramid)
 fact: (size pyramid1 small)
 fact: (color pyramid1 blue)
 
+fact: (near5Bombs c1)
+
 fact: (inst pyramid2 pyramid)
 fact: (size pyramid2 small)
 fact: (color pyramid2 green)
