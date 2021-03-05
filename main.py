@@ -13,7 +13,7 @@ class KBTest(unittest.TestCase):
         self.KB = KnowledgeBase([], [])
         for item in data:
             if isinstance(item, Fact) or isinstance(item, Rule):
-                self.KB.kb_assert(item)
+                self.KB.kb_add(item)
 
     def test1(self):
         ask1 = read.parse_input("fact: (motherof ada ?X)")

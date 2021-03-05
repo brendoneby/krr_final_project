@@ -38,49 +38,41 @@ class KnowledgeBase(object):
                 return kbrule
 
     def kb_add(self, fact_rule):
-        """Add a fact or rule to the KB
-        Args:
-            fact_rule (Fact|Rule) - the fact or rule to be added
-        Returns:
-            None
-        """
+        """Add a fact or rule to the KB"""
         printv("Adding {!r}", 1, verbose, [fact_rule])
         print("\nAdding",fact_rule,"to KB")
         if isinstance(fact_rule, Fact):
-            if fact_rule not in self.facts:
-                self.facts.append(fact_rule)
-                for rule in self.rules:
-                    self.ie.fc_infer(fact_rule, rule, self)
-            else:
-                if fact_rule.supported_by:
-                    ind = self.facts.index(fact_rule)
-                    for f in fact_rule.supported_by:
-                        self.facts[ind].supported_by.append(f)
-                else:
-                    ind = self.facts.index(fact_rule)
-                    self.facts[ind].asserted = True
+            self._kb_add_fact(fact_rule)
         elif isinstance(fact_rule, Rule):
-            if fact_rule not in self.rules:
-                self.rules.append(fact_rule)
-                for fact in self.facts:
-                    self.ie.fc_infer(fact, fact_rule, self)
+            self._kb_add_rule(fact_rule)
+
+    def _kb_add_fact(self, fact):
+        if fact not in self.facts:
+            self.facts.append(fact)
+            for rule in self.rules:
+                self.ie.fc_infer(fact, rule, self)
+        else:
+            if fact.supported_by:
+                ind = self.facts.index(fact)
+                for f in fact.supported_by:
+                    self.facts[ind].supported_by.append(f)
             else:
-                if fact_rule.supported_by:
-                    ind = self.rules.index(fact_rule)
-                    for f in fact_rule.supported_by:
-                        self.rules[ind].supported_by.append(f)
-                else:
-                    ind = self.rules.index(fact_rule)
-                    self.rules[ind].asserted = True
+                ind = self.facts.index(fact)
+                self.facts[ind].asserted = True
 
-    def kb_assert(self, fact_rule):
-        """Assert a fact or rule into the KB
-
-        Args:
-            fact_rule (Fact or Rule): Fact or Rule we're asserting
-        """
-        printv("Asserting {!r}", 0, verbose, [fact_rule])
-        self.kb_add(fact_rule)
+    def _kb_add_rule(self, rule):
+        if rule not in self.rules:
+            self.rules.append(rule)
+            for fact in self.facts:
+                self.ie.fc_infer(fact, rule, self)
+        else:
+            if rule.supported_by:
+                ind = self.rules.index(rule)
+                for f in rule.supported_by:
+                    self.rules[ind].supported_by.append(f)
+            else:
+                ind = self.rules.index(rule)
+                self.rules[ind].asserted = True
 
     def kb_is_violation(self, cell, safe_or_bomb):
         """Returns if adding a fact to the knowledgebase causes a logical inconsistancy"""
@@ -94,12 +86,8 @@ class KnowledgeBase(object):
 
     def kb_ask(self, f):
         """Ask if a fact is in the KB
-
-        Args:
-            fact (Fact) - Statement to be asked (will be converted into a Fact)
-
-        Returns:
-            listof Bindings|False - list of Bindings if result found, False otherwise
+        Args: fact (Fact) - Statement to be asked (will be converted into a Fact)
+        Returns: listof Bindings|False - list of Bindings if result found, False otherwise
         """
         print("Asking {!r}".format(f))
         if factq(f):
@@ -117,14 +105,7 @@ class KnowledgeBase(object):
             return []
 
     def kb_retract(self, fact):
-        """Retract a fact from the KB
-
-        Args:
-            fact - Fact to be retracted
-
-        Returns:
-            None
-        """
+        """Retract a fact from the KB"""
         printv("Retracting {!r}", 0, verbose, [fact])
         if isinstance(fact, Rule): return
 
@@ -157,8 +138,6 @@ class InferenceEngine(object):
         Returns:
             Nothing
         """
-        # print("TEST!!!")
-        # assert(False)
         printv('Attempting to infer from {!r} and {!r} => {!r}', 1, verbose,
             [fact.statement, rule.lhs, rule.rhs])
 
