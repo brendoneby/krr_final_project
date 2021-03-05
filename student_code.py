@@ -94,12 +94,15 @@ class KnowledgeBase(object):
         printv("Asserting {!r}", 0, verbose, [fact_rule])
         self.kb_add(fact_rule)
 
-    def kb_is_permitted(self, fact_rule):
+    def kb_is_violation(self, cell, safe_or_bomb):
         """Returns if adding a fact to the knowledgebase causes a logical inconsistancy"""
-        printv("Asserting {!r}", 0, verbose, [fact_rule])
-        violation = self.kb_add(fact_rule)
-        self.kb_retract(fact_rule)
-        return not violation
+        fact = read.parse_input("fact: ("+safe_or_bomb+" "+cell+")")
+        printv("Asserting {!r}", 0, verbose, [fact])
+        self.kb_add(fact)
+        isViolation = read.parse_input("fact: (violation "+cell+")")
+        self.KB.kb_ask(isViolation)
+        self.kb_retract(fact)
+        return isViolation
 
     def kb_ask(self, fact):
         """Ask if a fact is in the KB

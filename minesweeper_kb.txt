@@ -14,3 +14,5 @@ rule: ((near4Bomb ?c0) (nextTo ?c0 ?c1) (safe ?c1) (nextTo ?c0 ?c2) (safe ?c2) (
 rule: ((near3Bomb ?c0) (nextTo ?c0 ?c1) (safe ?c1) (nextTo ?c0 ?c2) (safe ?c2) (nextTo ?c0 ?c3) (safe ?c3) (nextTo ?c0 ?c4) (safe ?c4) (nextTo ?c0 ?c5) (safe ?c5) (nextTo ?c0 ?c)) -> (bomb ?c)
 rule: ((near2Bomb ?c0) (nextTo ?c0 ?c1) (safe ?c1) (nextTo ?c0 ?c2) (safe ?c2) (nextTo ?c0 ?c3) (safe ?c3) (nextTo ?c0 ?c4) (safe ?c4) (nextTo ?c0 ?c5) (safe ?c5) (nextTo ?c0 ?c6) (safe ?c6) (nextTo ?c0 ?c)) -> (bomb ?c)
 rule: ((near1Bomb ?c0) (nextTo ?c0 ?c1) (safe ?c1) (nextTo ?c0 ?c2) (safe ?c2) (nextTo ?c0 ?c3) (safe ?c3) (nextTo ?c0 ?c4) (safe ?c4) (nextTo ?c0 ?c5) (safe ?c5) (nextTo ?c0 ?c6) (safe ?c6) (nextTo ?c0 ?c7) (safe ?c7) (nextTo ?c0 ?c)) -> (bomb ?c)
+
+rule: ((safe ?c) (bomb ?c)) -> (violation ?c)
