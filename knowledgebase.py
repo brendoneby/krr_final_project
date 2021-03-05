@@ -74,7 +74,7 @@ class KnowledgeBase(object):
                 ind = self.rules.index(rule)
                 self.rules[ind].asserted = True
 
-    def kb_is_violation(self, cell, safe_or_bomb):
+    def is_violation(self, cell, safe_or_bomb):
         """Returns if adding a fact to the knowledgebase causes a logical inconsistancy"""
         fact = read.parse_input("fact: ("+safe_or_bomb+" "+cell+")")
         printv("Asserting {!r}", 0, verbose, [fact])
