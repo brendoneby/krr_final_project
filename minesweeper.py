@@ -4,6 +4,9 @@ import re
 import time
 from string import ascii_lowercase
 
+from knowledgebase import KnowledgeBase
+import read
+
 
 def setupgrid(gridsize, start, numberofmines):
     emptygrid = [['0' for i in range(gridsize)] for i in range(gridsize)]
@@ -136,6 +139,37 @@ def parseinput(inputstring, gridsize, helpmessage):
             message = ''
 
     return {'cell': cell, 'flag': flag, 'message': message}
+
+
+def init_kb(gridsize):
+    KB = KnowledgeBase([], [], 'minesweeper_kb.txt')
+    for i in range(gridsize - 1):
+        for j in range(gridsize - 1):
+            statement1 = read.parse_input(f'fact: (nextTo c{i}{j} c{i+1}{j})')
+            KB.kb_add(statement1)
+            statement2 = read.parse_input(f'fact: (nextTo c{i}{j} c{i+1}{j+1})')
+            KB.kb_add(statement2)
+            statement3 = read.parse_input(f'fact: (nextTo c{i}{j} c{i}{j+1})')
+            KB.kb_add(statement3)
+            statement4 = read.parse_input(f'fact: (nextTo c{i+1}{j} c{i}{j+1})')
+            KB.kb_add(statement4)
+            statement5 = read.parse_input(f'fact: (nextTo c{i+1}{j} c{i+1}{j+1}')
+            KB.kb_add(statement5)
+            statement6 = read.parse_input(f'fact: (nextTo c{i}{j+1} c{i+1}{j+1}')
+            KB.kb_add(statement6)
+    return KB
+
+
+def updateKB(grid, KB):
+    for i, row in enumerate(grid):
+        for j, ele in enumerate(row):
+            if ele != ' ':
+                statement = read.parse_input(f'fact: (safe c{i}{j})')
+                KB.kb_add(statement)
+                if ele != '0':
+                    statement = read.parse_input(f'fact: (near{ele}Bombs c{i}{j})')
+                    KB.kb_add(statement)
+    return KB
 
 
 def playgame():
