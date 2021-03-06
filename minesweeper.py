@@ -142,6 +142,7 @@ def parseinput(inputstring, gridsize, helpmessage):
 
 
 def init_kb(gridsize):
+    # Using rules from 
     KB = KnowledgeBase([], [], 'minesweeper_kb.txt')
     for i in range(gridsize - 1):
         for j in range(gridsize - 1):
@@ -161,6 +162,7 @@ def init_kb(gridsize):
 
 
 def updateKB(grid, KB):
+    # Pass facts to the KB
     for i, row in enumerate(grid):
         for j, ele in enumerate(row):
             if ele != ' ':
@@ -170,6 +172,17 @@ def updateKB(grid, KB):
                     statement = read.parse_input(f'fact: (near{ele}Bombs c{i}{j})')
                     KB.kb_add(statement)
     return KB
+
+
+def findFrontier(grid):
+    # Get all the positions which are next to a known quantity
+    # These will be the things we theorize about
+    frontier = set()
+    for i, row in enumerate(grid):
+        for j, ele in enumerate(row):
+            if not [' ' == grid[a][b] for a, b in getneighbors(grid, i, j)].all():
+                frontier.add((i, j))
+    return frontier
 
 
 def playgame():
