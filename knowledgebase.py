@@ -48,8 +48,8 @@ class KnowledgeBase(object):
 
     def kb_add(self, fact_rule):
         """Add a fact or rule to the KB"""
-        printv("Adding {!r}", 1, verbose, [fact_rule])
-        print("\nAdding",fact_rule,"to KB")
+        #printv("Adding {!r}", 1, verbose, [fact_rule])
+        #print("\nAdding",fact_rule,"to KB")
         if isinstance(fact_rule, Fact):
             self._kb_add_fact(fact_rule)
         elif isinstance(fact_rule, Rule):
@@ -86,7 +86,7 @@ class KnowledgeBase(object):
     def is_violation(self, cell, safe_or_bomb):
         """Returns if adding a fact to the knowledgebase causes a logical inconsistancy"""
         fact = read.parse_input("fact: ("+safe_or_bomb+" "+cell+")")
-        printv("Asserting {!r}", 0, verbose, [fact])
+        #printv("Asserting {!r}", 0, verbose, [fact])
         self.kb_add(fact)
         isViolation = read.parse_input("fact: (violation "+cell+")")
         self.kb_ask(isViolation)
@@ -98,7 +98,7 @@ class KnowledgeBase(object):
         Args: fact (Fact) - Statement to be asked (will be converted into a Fact)
         Returns: listof Bindings|False - list of Bindings if result found, False otherwise
         """
-        print("Asking {!r}".format(f))
+        #print("Asking {!r}".format(f))
         if factq(f):
             bindings_lst = ListOfBindings()
             # ask matched facts
@@ -110,12 +110,12 @@ class KnowledgeBase(object):
             return bindings_lst if bindings_lst.list_of_bindings else []
 
         else:
-            print("Invalid ask:", f.statement)
+            #print("Invalid ask:", f.statement)
             return []
 
     def kb_retract(self, fact):
         """Retract a fact from the KB"""
-        printv("Retracting {!r}", 0, verbose, [fact])
+        #printv("Retracting {!r}", 0, verbose, [fact])
         if isinstance(fact, Rule): return
 
         kb_fact = self.facts[self.facts.index(fact)]
@@ -147,8 +147,8 @@ class InferenceEngine(object):
         Returns:
             Nothing
         """
-        printv('Attempting to infer from {!r} and {!r} => {!r}', 1, verbose,
-            [fact.statement, rule.lhs, rule.rhs])
+        #printv('Attempting to infer from {!r} and {!r} => {!r}', 1, verbose,
+            # [fact.statement, rule.lhs, rule.rhs])
 
         if bindings := self._get_rule_bindings(fact, rule):
             new_lhs = [ns for stmt in rule.lhs

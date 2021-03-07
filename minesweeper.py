@@ -180,14 +180,27 @@ def findFrontier(grid):
     frontier = set()
     for i, row in enumerate(grid):
         for j, ele in enumerate(row):
-            if not [' ' == grid[a][b] for a, b in getneighbors(grid, i, j)].all():
+            if not all([' ' == grid[a][b] for a, b in getneighbors(grid, i, j)]):
                 frontier.add((i, j))
     return frontier
 
+#Deduces a safe cell from frontier cells, if possible
+#If no safe cell found, returns null
+def deduceSafeCell(grid):
+    frontierCells = findFrontier(grid)
+
+    print(frontierCells)
+
+    if frontierCells:
+        return frontierCells[0]
+    else:
+        return None 
 
 def playgame():
     gridsize = 8
     numberofmines = 12
+
+    kb = init_kb(gridsize)
 
     currgrid = [[' ' for i in range(gridsize)] for i in range(gridsize)]
 
@@ -202,6 +215,18 @@ def playgame():
     print(helpmessage + " Type 'help' to show this message again.\n")
 
     while True:
+        print("finding safe cell")
+        predCell = deduceSafeCell(currgrid)
+        print("done finding safe cell")
+
+        if predCell:
+            predRow, predCol = predCell
+            predRow += 1
+            predCol = ascii_lowercase[predCol]
+            print("The KB suggests the following cell: {0}{1}".format(predCol,predRow))
+        else:
+            print("Pick a random cell. The KB cannot determine a safe cell.")
+
         minesleft = numberofmines - len(flags)
         prompt = input('Enter the cell ({} mines left): '.format(minesleft))
         result = parseinput(prompt, gridsize, helpmessage + '\n')
@@ -259,7 +284,9 @@ def playgame():
                 if playagain():
                     playgame()
                 return
-
+        print("updating....")
+        updateKB(currgrid, kb)
+        print("updating done")
         showgrid(currgrid)
         print(message)
 
