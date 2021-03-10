@@ -71,6 +71,7 @@ def getneighbors(grid, rowno, colno):
 
 def getmines(grid, start, numberofmines):
     mines = []
+    # return [(0, 0), (6, 0), (1, 1), (0, 3), (1, 2), (7, 5), (5, 7), (0, 7), (0, 1), (6, 6), (6, 1), (5, 4)]
     neighbors = getneighbors(grid, *start)
 
     for i in range(numberofmines):
@@ -78,7 +79,7 @@ def getmines(grid, start, numberofmines):
         while cell == start or cell in mines or cell in neighbors:
             cell = getrandomcell(grid)
         mines.append(cell)
-
+    print("mines",mines)
     return mines
 
 
@@ -144,20 +145,21 @@ def parseinput(inputstring, gridsize, helpmessage):
 def init_kb(gridsize):
     # Using rules from 
     KB = KnowledgeBase([], [], 'minesweeper_kb.txt')
-    for i in range(gridsize - 1):
-        for j in range(gridsize - 1):
-            statement1 = read.parse_input(f'fact: (nextTo c{i}{j} c{i+1}{j})')
-            KB.kb_add(statement1)
-            statement2 = read.parse_input(f'fact: (nextTo c{i}{j} c{i+1}{j+1})')
-            KB.kb_add(statement2)
-            statement3 = read.parse_input(f'fact: (nextTo c{i}{j} c{i}{j+1})')
-            KB.kb_add(statement3)
-            statement4 = read.parse_input(f'fact: (nextTo c{i+1}{j} c{i}{j+1})')
-            KB.kb_add(statement4)
-            statement5 = read.parse_input(f'fact: (nextTo c{i+1}{j} c{i+1}{j+1}')
-            KB.kb_add(statement5)
-            statement6 = read.parse_input(f'fact: (nextTo c{i}{j+1} c{i+1}{j+1}')
-            KB.kb_add(statement6)
+    print("Initializing KB")
+    start, end = -1, gridsize+1
+    # print(start,end)
+    for i in range(start,end):
+        for j in range(start,end):
+            if i==start or i==end-1 or j==start or j==end-1:
+                statement = read.parse_input(f'fact: (safe c{i}{j})')
+                KB.kb_add(statement)
+            for k in range(max(i-1,start),min(i+2,end)):
+                for l in range(max(j-1, start), min(j+2, end)):
+                    if i==k and j==l: continue
+                    statement = read.parse_input(f'fact: (nextTo c{i}{j} c{k}{l})')
+                    KB.kb_add(statement)
+                    statement = read.parse_input(f'fact: (nextTo c{k}{l} c{i}{j})')
+                    KB.kb_add(statement)
     return KB
 
 
@@ -165,12 +167,19 @@ def updateKB(grid, KB):
     # Pass facts to the KB
     for i, row in enumerate(grid):
         for j, ele in enumerate(row):
-            if ele != ' ':
+            if ele != ' ' and ele != 'F':
                 statement = read.parse_input(f'fact: (safe c{i}{j})')
                 KB.kb_add(statement)
                 if ele != '0':
-                    statement = read.parse_input(f'fact: (near{ele}Bombs c{i}{j})')
+                    statement = read.parse_input(f'fact: (near{ele}Bomb c{i}{j})')
                     KB.kb_add(statement)
+                # print("done...")
+                # for rule in KB.rules: print(rule)
+                # print()
+                # print()
+                # print()
+                # for fact in KB.facts: print(fact)
+                # print("kb has " + str(len(KB.facts)) + " facts and " + str(len(KB.rules)) + " rules")
     return KB
 
 
@@ -180,25 +189,37 @@ def findFrontier(grid):
     frontier = set()
     for i, row in enumerate(grid):
         for j, ele in enumerate(row):
-            if not all([' ' == grid[a][b] for a, b in getneighbors(grid, i, j)]):
+            if ' ' == grid[i][j] and not all([' ' == grid[a][b] for a, b in getneighbors(grid, i, j)]):
                 frontier.add((i, j))
     return frontier
 
 #Deduces a safe cell from frontier cells, if possible
 #If no safe cell found, returns null
-def deduceSafeCell(grid):
+def deduceSafeCell(kb, grid):
     frontierCells = findFrontier(grid)
 
     print(frontierCells)
 
     if frontierCells:
-        return frontierCells[0]
-    else:
-        return None 
+        for cell in frontierCells:
+            cellid = "c"+str(cell[0])+str(cell[1])
+
+            ask = read.parse_input("fact: (bomb "+cellid+")")
+            print("asking " + str(ask))
+            is_entailed = kb.kb_ask(ask)
+            print("entailed:", is_entailed)
+            if is_entailed: return cell,True
+
+            ask = read.parse_input("fact: (safe "+cellid+")")
+            print("asking " + str(ask))
+            is_entailed = kb.kb_ask(ask)
+            print("entailed:", is_entailed)
+            if is_entailed: return cell,False
+    return None,False
 
 def playgame():
     gridsize = 8
-    numberofmines = 12
+    numberofmines = 10
 
     kb = init_kb(gridsize)
 
@@ -216,14 +237,14 @@ def playgame():
 
     while True:
         print("finding safe cell")
-        predCell = deduceSafeCell(currgrid)
+        predCell, isBomb = deduceSafeCell(kb, currgrid)
         print("done finding safe cell")
 
         if predCell:
             predRow, predCol = predCell
             predRow += 1
             predCol = ascii_lowercase[predCol]
-            print("The KB suggests the following cell: {0}{1}".format(predCol,predRow))
+            print("The KB suggests the following cell: {0}{1}{2}".format(predCol,predRow,"f" if isBomb else ""))
         else:
             print("Pick a random cell. The KB cannot determine a safe cell.")
 

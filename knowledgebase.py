@@ -1,4 +1,5 @@
 import itertools
+import time
 
 import read, copy
 from util import *
@@ -56,10 +57,11 @@ class KnowledgeBase(object):
             self._kb_add_rule(fact_rule)
 
     def _kb_add_fact(self, fact):
+        # t0 = time.time()
         if fact not in self.facts:
             self.facts.append(fact)
-            for rule in self.rules:
-                self.ie.fc_infer(fact, rule, self)
+            # for rule in self.rules:
+            #     self.ie.fc_infer(fact, rule, self)
         else:
             if fact.supported_by:
                 ind = self.facts.index(fact)
@@ -68,8 +70,13 @@ class KnowledgeBase(object):
             else:
                 ind = self.facts.index(fact)
                 self.facts[ind].asserted = True
+        # t1 = time.time()
+        # print("adding fact took: " + str(t1-t0))
 
     def _kb_add_rule(self, rule):
+        # t0 = time.time()
+        # print("adding rule")
+        # print(rule)
         if rule not in self.rules:
             self.rules.append(rule)
             for fact in self.facts:
@@ -82,6 +89,8 @@ class KnowledgeBase(object):
             else:
                 ind = self.rules.index(rule)
                 self.rules[ind].asserted = True
+        # t1 = time.time()
+        # print("adding rule took: " + str(t1-t0))
 
     def is_violation(self, cell, safe_or_bomb):
         """Returns if adding a fact to the knowledgebase causes a logical inconsistancy"""
@@ -100,18 +109,40 @@ class KnowledgeBase(object):
         """
         #print("Asking {!r}".format(f))
         if factq(f):
-            bindings_lst = ListOfBindings()
             # ask matched facts
-            for fact in self.facts:
-                binding = match(f.statement, fact.statement)
-                if binding:
-                    bindings_lst.add_bindings(binding, [fact])
+            if(self.check_facts(f)): return True
 
-            return bindings_lst if bindings_lst.list_of_bindings else []
+            # check rules if no facts found
+            backward_result = self.backward_chain(f)
+
+            return backward_result
 
         else:
             #print("Invalid ask:", f.statement)
             return []
+
+    def check_facts(self, f):
+        if isinstance(f,Fact): stmt = f.statement
+        elif isinstance(f,Statement): stmt = f
+        else: return False
+        # print("checking",stmt)
+        for fact in self.facts:
+            binding = match(stmt, fact.statement)
+            if binding:
+                # print("returning true")
+                return True
+        # print("returning false")
+        return False
+
+    def backward_chain(self, f):
+        for rule in self.rules:
+            binding = match(f.statement, rule.rhs)
+            if binding and binding.bindings:
+                # print("bindings")
+                # print(binding)
+                is_entailed = self.ie.bc_infer(binding, f, rule, self)
+                if is_entailed: return True
+        return False
 
     def kb_retract(self, fact):
         """Retract a fact from the KB"""
@@ -136,6 +167,69 @@ class KnowledgeBase(object):
 
 
 class InferenceEngine(object):
+    def bc_infer(self, bindings, fact, rule, kb):
+        """Forward-chaining to infer new facts and rules
+
+        Args:
+            fact (Fact) - A fact from the KnowledgeBase
+            rule (Rule) - A rule from the KnowledgeBase
+            kb (KnowledgeBase) - A KnowledgeBase
+
+        Returns:
+            Nothing
+        """
+        #printv('Attempting to infer from {!r} and {!r} => {!r}', 1, verbose,
+            # [fact.statement, rule.lhs, rule.rhs])
+
+        if not bindings or len(bindings.bindings) ==  0: return False
+
+        # if bindings := self._get_rule_bindings(fact, rule):
+        lhs = [instantiate(stmt,bindings) for stmt in rule.lhs]
+        # lhs = [ns for stmt in rule.lhs
+        #            if (ns := instantiate(stmt,bindings)) != fact.statement]
+        rhs = instantiate(rule.rhs, bindings)
+        test_rule = Rule([lhs, rhs], [(fact, rule)])
+        # print("test rule:",test_rule)
+        is_entailed = self.bc_infer_step(test_rule, kb, [])
+        # print("entailed",is_entailed)
+        if(is_entailed): kb.kb_add(Fact(rhs, [(fact,rule)]))
+        return is_entailed
+
+    def bc_infer_step(self, rule, kb, used_terms = []):
+        # print()
+        # print("step",rule)
+        for kb_fact in kb.facts:
+            # if str(kb_fact.statement).startswith("(near1Bomb"): print(kb_fact.statement, used_terms)
+            if fact_bindings := self._get_rule_bindings(kb_fact, rule, used_terms):
+                # if str(kb_fact.statement).startswith("(near1Bomb"): print(fact_bindings)
+                # print("Final Bindings",fact_bindings)
+                if len(fact_bindings.bindings) == 0: continue
+                new_rule = self.get_new_rule(rule, kb_fact, fact_bindings, kb)
+                if not new_rule: continue
+                used_terms.extend(fact_bindings.bindings_dict.values())
+                # print("used terms",used_terms)
+                # print("has unknown",  rule_has_unknown(new_rule))
+                if rule_has_unknown(new_rule):
+                    return self.bc_infer_step(new_rule, kb, used_terms)
+                else:
+                    print(new_rule)
+                    return True
+        return False
+
+    def get_new_rule(self, rule, fact, bindings, kb):
+        new_lhs = [instantiate(stmt,bindings) for stmt in rule.lhs]
+        # new_lhs = [ns for stmt in rule.lhs
+        #            if (ns := instantiate(stmt,bindings)) != fact.statement]
+        new_rhs = instantiate(rule.rhs, bindings)
+        new_rule = Rule([new_lhs,new_rhs], [(fact,rule)])
+        # print()
+        # print("bindings found",bindings)
+        # print(new_rule)
+        for stmt in new_lhs:
+            if not is_variable(stmt) and not kb.check_facts(stmt): return False
+        return new_rule
+
+
     def fc_infer(self, fact, rule, kb):
         """Forward-chaining to infer new facts and rules
 
@@ -161,7 +255,14 @@ class InferenceEngine(object):
             rule.supports_rules.append(new_fact_rule)
             kb.kb_add(new_fact_rule)
 
-    def _get_rule_bindings(self, fact, rule):
+    def _get_rule_bindings(self, fact, rule, used_terms):
         bindings = None
-        for stmt in rule.lhs: bindings = match(stmt, fact.statement, bindings)
+        # print()
+        # rhsst = str(rule.rhs)
+        for stmt in rule.lhs:
+            if not is_variable(stmt): continue
+            bindings = match(stmt, fact.statement, bindings, used_terms)
+            # if rhsst == "(bomb c03)" and bindings and len(bindings.bindings)>0:
+            #     print("matching",stmt,fact.statement, ", bindings:",bindings)
+        # if(bindings and len(bindings.bindings)>0): print("bindings:",bindings)
         return bindings

@@ -18,7 +18,7 @@ def is_var(var):
 
     return isinstance(var, lc.Variable)
 
-def match(state1, state2, bindings=None):
+def match(state1, state2, bindings=None, used_terms = []):
     """Match two statements and return the associated bindings or False if there
         is no binding
 
@@ -34,9 +34,9 @@ def match(state1, state2, bindings=None):
         return False
     if not bindings:
         bindings = lc.Bindings()
-    return match_recursive(state1.terms, state2.terms, bindings)
+    return match_recursive(state1.terms, state2.terms, bindings, used_terms)
 
-def match_recursive(terms1, terms2, bindings):  # recursive...
+def match_recursive(terms1, terms2, bindings, used_terms = []):  # recursive...
     """Recursive helper for match
 
     Args:
@@ -49,10 +49,10 @@ def match_recursive(terms1, terms2, bindings):  # recursive...
     """
     if len(terms1) == 0:
         return bindings
-    if is_var(terms1[0]):
+    if is_var(terms1[0]) and str(terms2[0]) not in used_terms:
         if not bindings.test_and_bind(terms1[0], terms2[0]):
             return False
-    elif is_var(terms2[0]):
+    elif is_var(terms2[0]) and str(terms1[0]) not in used_terms:
         if not bindings.test_and_bind(terms2[0], terms1[0]):
             return False
     elif terms1[0] != terms2[0]:
@@ -87,6 +87,16 @@ def factq(element):
         bool
     """
     return isinstance(element, lc.Fact)
+
+
+def rule_has_unknown(rule):
+    for stmt in rule.lhs:
+        if is_variable(stmt): return True
+    return False
+
+def is_variable(stmt):
+    for term in stmt.terms:
+        if isinstance(term.term, lc.Variable): return True
 
 def printv(message, level, verbose, data=[]):
     """Prints given message formatted with data if passed in verbose flag is greater than level
