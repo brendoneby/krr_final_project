@@ -47,10 +47,14 @@ class KnowledgeBase(object):
             if rule == kbrule:
                 return kbrule
 
+    def kb_add_parse(self, text):
+        parsed = read.parse_input(text)
+        self.kb_add(parsed)
+
     def kb_add(self, fact_rule):
         """Add a fact or rule to the KB"""
         #printv("Adding {!r}", 1, verbose, [fact_rule])
-        #print("\nAdding",fact_rule,"to KB")
+        # print("\nAdding",fact_rule,"to KB")
         if isinstance(fact_rule, Fact):
             self._kb_add_fact(fact_rule)
         elif isinstance(fact_rule, Rule):
@@ -91,16 +95,16 @@ class KnowledgeBase(object):
                 self.rules[ind].asserted = True
         # t1 = time.time()
         # print("adding rule took: " + str(t1-t0))
-
-    def is_violation(self, cell, safe_or_bomb):
-        """Returns if adding a fact to the knowledgebase causes a logical inconsistancy"""
-        fact = read.parse_input("fact: ("+safe_or_bomb+" "+cell+")")
-        #printv("Asserting {!r}", 0, verbose, [fact])
-        self.kb_add(fact)
-        isViolation = read.parse_input("fact: (violation "+cell+")")
-        self.kb_ask(isViolation)
-        self.kb_retract(fact)
-        return isViolation
+    #
+    # def is_violation(self, cell, safe_or_bomb):
+    #     """Returns if adding a fact to the knowledgebase causes a logical inconsistancy"""
+    #     fact = read.parse_input("fact: ("+safe_or_bomb+" "+cell+")")
+    #     #printv("Asserting {!r}", 0, verbose, [fact])
+    #     self.kb_add(fact)
+    #     isViolation = read.parse_input("fact: (violation "+cell+")")
+    #     self.kb_ask(isViolation)
+    #     self.kb_retract(fact)
+    #     return isViolation
 
     def kb_ask(self, f):
         """Ask if a fact is in the KB
@@ -206,13 +210,15 @@ class InferenceEngine(object):
                 if len(fact_bindings.bindings) == 0: continue
                 new_rule = self.get_new_rule(rule, kb_fact, fact_bindings, kb)
                 if not new_rule: continue
-                used_terms.extend(fact_bindings.bindings_dict.values())
-                # print("used terms",used_terms)
+                next_used_terms = used_terms.copy()
+                next_used_terms.extend(fact_bindings.bindings_dict.values())
+                # print("used terms",next_used_terms)
                 # print("has unknown",  rule_has_unknown(new_rule))
                 if rule_has_unknown(new_rule):
-                    return self.bc_infer_step(new_rule, kb, used_terms)
+                    entails = self.bc_infer_step(new_rule, kb, next_used_terms)
+                    if entails: return True
+                    else: continue
                 else:
-                    print(new_rule)
                     return True
         return False
 
