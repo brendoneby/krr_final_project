@@ -95,16 +95,16 @@ class KnowledgeBase(object):
                 self.rules[ind].asserted = True
         # t1 = time.time()
         # print("adding rule took: " + str(t1-t0))
-    #
-    # def is_violation(self, cell, safe_or_bomb):
-    #     """Returns if adding a fact to the knowledgebase causes a logical inconsistancy"""
-    #     fact = read.parse_input("fact: ("+safe_or_bomb+" "+cell+")")
-    #     #printv("Asserting {!r}", 0, verbose, [fact])
-    #     self.kb_add(fact)
-    #     isViolation = read.parse_input("fact: (violation "+cell+")")
-    #     self.kb_ask(isViolation)
-    #     self.kb_retract(fact)
-    #     return isViolation
+
+    def is_violation(self, cell, safe_or_bomb):
+        """Returns if adding a fact to the knowledgebase causes a logical inconsistancy"""
+        fact = read.parse_input("fact: ("+safe_or_bomb+" "+cell+")")
+        #printv("Asserting {!r}", 0, verbose, [fact])
+        self.kb_add(fact)
+        isViolation = read.parse_input("fact: (violation "+cell+")")
+        self.kb_ask(isViolation)
+        self.kb_retract(fact)
+        return isViolation
 
     def kb_ask(self, f):
         """Ask if a fact is in the KB
@@ -114,7 +114,7 @@ class KnowledgeBase(object):
         #print("Asking {!r}".format(f))
         if factq(f):
             # ask matched facts
-            if(self.check_facts(f)): return True
+            if bindings := self.check_facts(f): return bindings
 
             # check rules if no facts found
             backward_result = self.backward_chain(f)
@@ -134,7 +134,7 @@ class KnowledgeBase(object):
             binding = match(stmt, fact.statement)
             if binding:
                 # print("returning true")
-                return True
+                return binding
         # print("returning false")
         return False
 
@@ -192,12 +192,13 @@ class InferenceEngine(object):
         # lhs = [ns for stmt in rule.lhs
         #            if (ns := instantiate(stmt,bindings)) != fact.statement]
         rhs = instantiate(rule.rhs, bindings)
-        test_rule = Rule([lhs, rhs], [(fact, rule)])
+        test_rule = Rule([lhs, rhs], [])
         # print("test rule:",test_rule)
-        is_entailed = self.bc_infer_step(test_rule, kb, [])
+        entailed_rule = self.bc_infer_step(test_rule, kb, [])
         # print("entailed",is_entailed)
-        if(is_entailed): kb.kb_add(Fact(rhs, [(fact,rule)]))
-        return is_entailed
+        if entailed_rule:
+            kb.kb_add(Fact(rhs, [entailed_rule]))
+        return entailed_rule
 
     def bc_infer_step(self, rule, kb, used_terms = []):
         # print()
@@ -209,17 +210,21 @@ class InferenceEngine(object):
                 # print("Final Bindings",fact_bindings)
                 if len(fact_bindings.bindings) == 0: continue
                 new_rule = self.get_new_rule(rule, kb_fact, fact_bindings, kb)
+                new_rule = self.get_new_rule(rule, kb_fact, fact_bindings, kb)
                 if not new_rule: continue
                 next_used_terms = used_terms.copy()
                 next_used_terms.extend(fact_bindings.bindings_dict.values())
                 # print("used terms",next_used_terms)
                 # print("has unknown",  rule_has_unknown(new_rule))
                 if rule_has_unknown(new_rule):
-                    entails = self.bc_infer_step(new_rule, kb, next_used_terms)
-                    if entails: return True
+                    entailed_rule = self.bc_infer_step(new_rule, kb, next_used_terms)
+                    if entailed_rule:
+                        # add suppported by kb_fact, entailed_rule
+                        new_rule.supported_by.append((kb_fact, entailed_rule))
+                        return new_rule
                     else: continue
                 else:
-                    return True
+                    return new_rule
         return False
 
     def get_new_rule(self, rule, fact, bindings, kb):
@@ -227,7 +232,7 @@ class InferenceEngine(object):
         # new_lhs = [ns for stmt in rule.lhs
         #            if (ns := instantiate(stmt,bindings)) != fact.statement]
         new_rhs = instantiate(rule.rhs, bindings)
-        new_rule = Rule([new_lhs,new_rhs], [(fact,rule)])
+        new_rule = Rule([new_lhs,new_rhs], [])
         # print()
         # print("bindings found",bindings)
         # print(new_rule)
@@ -261,7 +266,7 @@ class InferenceEngine(object):
             rule.supports_rules.append(new_fact_rule)
             kb.kb_add(new_fact_rule)
 
-    def _get_rule_bindings(self, fact, rule, used_terms):
+    def _get_rule_bindings(self, fact, rule, used_terms = []):
         bindings = None
         # print()
         # rhsst = str(rule.rhs)

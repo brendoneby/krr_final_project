@@ -71,8 +71,7 @@ def getneighbors(grid, rowno, colno):
 
 def getmines(grid, start, numberofmines):
     mines = []
-    # return [(0, 0), (6, 0), (1, 1), (0, 3), (1, 2), (7, 5), (5, 7), (0, 7), (0, 1), (6, 6), (6, 1), (5, 4)]
-    # return [(2, 4), (7, 6), (3, 4), (5, 4), (1, 6), (4, 7), (5, 6), (1, 1), (0, 5), (0, 7)]
+    # return [(4, 6), (3, 7), (6, 4), (2, 0), (3, 5), (3, 3), (6, 2), (7, 2), (0, 2), (2, 3)]     #Winnable
     neighbors = getneighbors(grid, *start)
 
     for i in range(numberofmines):
@@ -215,7 +214,7 @@ def deduceSafeCell(kb, grid):
     return None,False
 
 def playgame():
-    gridsize = 8
+    gridsize = 10
     numberofmines = 10
 
     kb = init_kb(gridsize)
